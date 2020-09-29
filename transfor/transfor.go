@@ -2,6 +2,7 @@ package transfor
 
 import (
 	"database/sql"
+	"fmt"
 	"log"
 	"test/MetaData"
 )
@@ -66,8 +67,9 @@ func InsertSingleOssRecord(db *sql.DB, p MetaData.FileMeta) bool {
 
 //返回的是objname
 func GetObjNameFromDb(db *sql.DB, filehash string) string {
-	rows, err := db.Query("select objname from tbl_oss_file where file_sha1=" + filehash)
+	rows, err := db.Query(fmt.Sprintf(`select objname from tbl_oss_file where file_sha1="%s"`, filehash))
 	if err != nil {
+		log.Println(err)
 		return ""
 	}
 

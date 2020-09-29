@@ -20,9 +20,12 @@ import (
 	"strconv"
 	"strings"
 	"test/MetaData"
+	"test/config"
 	fop "test/fileOperation"
 	"test/mpupload"
+	"test/msgQue"
 	"test/mysql"
+	"test/oss"
 	"test/redis"
 	"test/register"
 	"test/transfor"
@@ -204,6 +207,10 @@ func InterAction(f http.HandlerFunc) http.HandlerFunc {
 }
 
 //上传接口
+//TODO 上传接口需要大改
+//对于基本上传接口，在本地存储后同步的上传到阿里云
+//对于分块上传接口，在本地存储后，在阿里云追加写入
+//对于下载，云端而言，只需要下拉一个url即可
 func UploadHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method == "GET" {
 		//get则读取html文件返回
@@ -271,6 +278,28 @@ func UploadHandler(w http.ResponseWriter, r *http.Request) {
 
 		suc := transfor.UpdateFileTbl(db, &fileMeta)
 		if suc {
+			//不再等待云操作，而是发出消息
+			data := msgQue.TransferData{
+				FileHash:     fileMeta.FileSha1,
+				DestLocation: config.ObjName + fileMeta.FileSha1,
+				CurLocation:  fileMeta.Location,
+			}
+			//oss.OssUploadFileStream(config.ObjName+fileMeta.FileSha1, fileMeta.Location)
+			//fileMeta.Location = config.ObjName + fileMeta.FileSha1
+			//数据插入
+			//transfor.InsertSingleOssRecord(db, fileMeta)
+
+			//将data数据发送到消息队列
+			pubData, _ := json.Marshal(data)
+			suc := msgQue.Publish(
+				config.TransExchangeName,
+				config.TransOSSRoutingKey,
+				pubData)
+			if !suc {
+				log.Println("消息未能成功发送")
+				//TO DO重新发送
+			}
+
 			http.Redirect(w, r, "/static/view/home.html", http.StatusFound)
 		} else {
 			w.WriteHeader(http.StatusForbidden)
@@ -580,4 +609,31 @@ func ChunkDownloadCmp(w http.ResponseWriter, r *http.Request) {
 		"success",
 		nil,
 	}))
+}
+
+func DownloadUrlHandler(w http.ResponseWriter, r *http.Request) {
+	r.ParseForm()
+	username := r.Form.Get("username")
+	fileHash := r.Form.Get("filehash")
+	db := mysql.DBConn()
+	suc := userfile.FindSingleFile(db, fileHash, username)
+	if !suc {
+		w.Write(LoadJson(&CallBack{
+			-1,
+			"无权访问",
+			nil,
+		}))
+		return
+	}
+	objname := transfor.GetObjNameFromDb(db, fileHash)
+	if len(objname) == 0 {
+		w.Write(LoadJson(&CallBack{
+			-1,
+			"未在云上发现",
+			nil,
+		}))
+		return
+	}
+	url := oss.OssDownloadUrl(objname)
+	w.Write([]byte(url))
 }

@@ -9,7 +9,8 @@ const (
 	OSSAccessKeyID = "LTAIpZQZV5sDhk26"
 	//AccessScrete
 	OSSAccessKeySecret = "jnIUBuomdM4Hxr9T71BdDnjuxtuCIo"
-
+	//obj Name
+	ObjName = "oss/"
 	//rabbitmq Params
 
 	//是否开启文件异步传输(默认情况是同步)

@@ -2,6 +2,7 @@ package msgQue
 
 import (
 	"fmt"
+	"log"
 	"test/config"
 
 	"github.com/streadway/amqp"
@@ -60,6 +61,10 @@ func Publish(exchange, routingKey string, msg []byte) bool {
 }
 
 func StartConsume(qName, cName string, callback func([]byte) bool) bool {
+	if initChannel() == false {
+		log.Println("Channel can't up")
+		return false
+	}
 	//1.获取消息信道
 	msgs, err := channel.Consume(
 		qName,
@@ -71,7 +76,7 @@ func StartConsume(qName, cName string, callback func([]byte) bool) bool {
 		nil,
 	)
 
-	if err == nil {
+	if err != nil {
 		fmt.Println(err)
 		return false
 	}

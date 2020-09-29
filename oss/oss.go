@@ -9,7 +9,13 @@ import (
 )
 
 //该文件作用于对阿里云进行远程传输
-//
+//在不改变原数据库的结构的情况下需要设置一个oss表
+//filename string
+//filehash string
+//filesize int
+//objname string
+
+//其中关键数据在于objname，需要通过filehash来获取objname
 var ossCli *oss.Client
 
 //获取服务器

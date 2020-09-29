@@ -17,6 +17,9 @@ func main() {
 	http.HandleFunc("/user/info", handlers.InterAction(handlers.UserInforHandler))
 	http.HandleFunc("/file/download", handlers.InterAction(handlers.DownloadHandler))
 
+	//云端下载接口
+	http.HandleFunc("/file/downloadurl", handlers.InterAction(handlers.DownloadUrlHandler))
+
 	//分块上传服务
 	http.HandleFunc("/file/chunkinit", handlers.InterAction(handlers.UploadChunksInit))
 	http.HandleFunc("/file/chunkupload", handlers.InterAction(handlers.UploadSingleChunk))
