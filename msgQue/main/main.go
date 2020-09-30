@@ -14,6 +14,14 @@ import (
 	"test/transfor"
 )
 
+func IsFile(f string) bool {
+	fi, e := os.Stat(f)
+	if e != nil {
+		return false
+	}
+	return fi.IsDir()
+}
+
 //作用是启动消息队列生产者和消费者
 func ProcessTransfer(msg []byte) bool {
 	//1.解析msg
@@ -29,18 +37,37 @@ func ProcessTransfer(msg []byte) bool {
 		log.Println(err)
 		return false
 	}
-	filed, err := os.Open(pubData.CurLocation)
-	if err != nil {
-		log.Println(err)
-		return false
-	}
+	//1.判断是文件或者是文件夹
+	suc := IsFile(pubData.CurLocation)
+	//2.文件直接读取
+	if !suc {
+		filed, err := os.Open(pubData.CurLocation)
+		if err != nil {
+			log.Println(err)
+			return false
+		}
 
-	err = oss.Bucket().PutObject(
-		pubData.DestLocation,
-		bufio.NewReader(filed))
-	if err != nil {
-		log.Println(err)
-		return false
+		//3.分块追加模式
+		err = oss.Bucket().PutObject(
+			pubData.DestLocation,
+			bufio.NewReader(filed))
+		if err != nil {
+			log.Println(err)
+			return false
+		}
+	} else {
+		//分块读取并以追加模式加入
+		//1.初始化分块上传事件
+		//2.判断文件是否存在
+		//3.打开文件并上传
+		//4.上传完成信号
+		suc := oss.OssUploadByChunks(config.ObjName+pubData.FileHash, pubData.CurLocation)
+		if suc {
+			log.Println("分块上传完成")
+		} else {
+			log.Println("分块上传失败")
+			return false
+		}
 	}
 
 	db := mysql.DBConn()

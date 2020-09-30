@@ -3,6 +3,8 @@ package oss
 import (
 	"fmt"
 	"log"
+	"os"
+	"strconv"
 	cfg "test/config"
 
 	"github.com/aliyun/aliyun-oss-go-sdk/oss"
@@ -62,6 +64,46 @@ func OssUploadFileStream(objname, filepath string) bool {
 	if err != nil {
 		log.Println(err)
 		return false
+	}
+	return true
+}
+
+func PathExists(path string) (bool, error) {
+	_, err := os.Stat(path)
+	if err == nil {
+		return true, nil
+	}
+	if os.IsNotExist(err) {
+		return false, nil
+	}
+	return false, err
+}
+
+//分块上传逻辑封装
+func OssUploadByChunks(ObjName, path string) bool {
+	bucket := Bucket()
+	//采用追加模式
+	idx := 0
+	var cur int64 = 0
+	//分块上传
+	for {
+		curPath := path + "/" + strconv.Itoa(idx)
+		flag, _ := PathExists(curPath)
+		if flag {
+			f, _ := os.Open(curPath)
+			// finfor, _ := os.Stat(curPath)
+			// size := finfor.Size()
+			ep, err := bucket.AppendObject(ObjName, f, cur)
+			cur = ep
+			if err != nil {
+				log.Println(err)
+				return false
+			}
+			idx++
+			f.Close()
+		} else {
+			break
+		}
 	}
 	return true
 }

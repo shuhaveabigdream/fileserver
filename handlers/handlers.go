@@ -513,6 +513,20 @@ func UploadComplete(w http.ResponseWriter, r *http.Request) {
 	}
 	transfor.UpdateFileTbl(db, &fm)
 	userfile.InsertSigleRecored(db, &uf)
+
+	data := msgQue.TransferData{
+		FileHash:     fm.FileSha1,
+		DestLocation: config.ObjName + fm.FileSha1,
+		CurLocation:  fm.Location,
+	}
+
+	msg, _ := json.Marshal(data)
+	fmt.Println(string(msg))
+	//向交换机发送消息
+	suc := msgQue.Publish(config.TransExchangeName, config.TransOSSRoutingKey, msg)
+	if suc {
+		log.Println("消息发送成功")
+	}
 	//6.相应结果
 	w.Write(LoadJson(&CallBack{
 		1,
