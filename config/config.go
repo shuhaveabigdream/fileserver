@@ -4,11 +4,11 @@ const (
 	//buketName
 	OSSBucket = "shuqi-store"
 	//EndPoint
-	OSSEndpoint = "oss-cn-chengdu.aliyuncs.com"
+	OSSEndpoint = "xxxxxx"
 	//AccessKey
-	OSSAccessKeyID = "LTAIpZQZV5sDhk26"
+	OSSAccessKeyID = "xxxxxxxxxxxxxxx"
 	//AccessScrete
-	OSSAccessKeySecret = "jnIUBuomdM4Hxr9T71BdDnjuxtuCIo"
+	OSSAccessKeySecret = "xxxxxxxxxxxxxx"
 	//obj Name
 	ObjName = "oss/"
 	//rabbitmq Params
